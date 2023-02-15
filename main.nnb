@@ -85,6 +85,87 @@
                 "interface Person {\n  name: string;\n  age: number;\n  hobbies: string[];\n  role: [number, string];\n}\n\nconst person: Person = {\n  name: \"Maximilian\",\n  age: 30,\n  hobbies: [\"Sports\", \"Cooking\"],\n  role: [2, \"author\"],\n};\n\nconst invalidPerson: Person = {\n  name: \"Maximilian\",\n  age: 30,\n  hobbies: [\"Sports\", \"Cooking\"],\n  role: [2, \"author\", \"admin\"],\n};\n\n// ! this code is invalid, since the role tuple has a length of 2, but we are trying to add a third element\n// ? without typescript, this error would not be caught until the server would return an error\n\n\nasync function registerUser(person: Person, password: string) {\n  const response = await fetch(\"https://example.com/register\", {\n    method: \"POST\",\n    headers: {\n      \"Content-Type\": \"application/json\",\n    },\n    body: JSON.stringify({ person, password }),\n  });\n  return response.json();\n}\n\n\nasync function main() {\n  const valid = await registerUser(person, \"password\").catch((err) => {\n    console.log(err);\n    // should not be called\n    return null;\n  });\n\n  const invalid = await registerUser(invalidPerson, \"password\").catch((err) => {\n    console.log(err);\n    // should be called\n    return null;\n  });\n\n  // will throw an error at compile time\n  const invalid2 = await registerUser(\"Maximilian\", \"password\").catch((err) => {\n    console.log(err);\n    return null;\n  });\n\n}"
             ],
             "outputs": []
+        },
+        {
+            "language": "typescript",
+            "source": [
+                "type Age = number | `${number} years old`;\n\nenum Family {\n  Mammal,\n  Bird,\n  Reptile,\n  Amphibian,\n  Fish,\n}\n\ninterface Animal {\n  name: string;\n  age: Age;\n  family: Family;\n}\n\ntype IdentifiableAnimal = Animal & { id: string; parents?: [string, string] };\n\nconst uuid = () => Math.random().toString(36).substring(2, 15);\n\nconst dog: IdentifiableAnimal = {\n  name: \"Dog\",\n  age: \"2 years old\",\n  family: Family.Mammal,\n  id: uuid(),\n};\n\nconst cat: IdentifiableAnimal = {\n  name: \"Cat\",\n  age: \"3 years old\",\n  family: Family.Mammal,\n  id: uuid(),\n};\n\nconst floppyBird: IdentifiableAnimal = {\n  name: \"Floppy Bird\",\n  age: 1,\n  family: Family.Bird,\n  id: uuid(),\n};\n\nfunction marry(animal1: IdentifiableAnimal, animal2: IdentifiableAnimal) {\n  if (animal1.family !== animal2.family) {\n    throw new Error(\n      `${animal1.name} and ${animal2.name} cannot breed, since ${\n        animal1.name\n      } is a ${Family[animal1.family]} and ${animal2.name} is a ${\n        Family[animal2.family]\n      }`\n    );\n  }\n  return (name: string): IdentifiableAnimal => ({\n    name,\n    age: 0,\n    family: animal1.family,\n    parents: [animal1.id, animal2.id],\n    id: uuid(),\n  });\n}\n\nfunction main() {\n    try {\n        const dogCatFamily = marry(dog, cat);\n        const dogCat = dogCatFamily(\"DogCat\");\n\n        console.log(dogCat);\n        \n        const dogFloppyBirdFamily = marry(dog, floppyBird);\n        const dogFloppyBird = dogFloppyBirdFamily(\"DogFloppyBird\");\n    } catch (err) {\n        return err.message;\n    }\n}\n\nmain();\n"
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "application/vnd.code.notebook.stdout",
+                            "value": [
+                                "{",
+                                "  name: 'DogCat',",
+                                "  age: 0,",
+                                "  family: 0,",
+                                "  parents: [ 'uehzpi0hfj', '23i4vtnlpo2' ],",
+                                "  id: 'q1eh021fwf'",
+                                "}",
+                                ""
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "items": [
+                        {
+                            "mime": "text/plain",
+                            "value": [
+                                "\u001b[32m'Dog and Floppy Bird cannot breed, since Dog is a Mammal and Floppy Bird is a Bird'\u001b[39m"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "language": "typescript",
+            "source": [
+                "function addGen<T extends number | string>(n1: T, n2: T) {\n    if (typeof n1 === \"number\" && typeof n2 === \"number\") {\n      return n1 + n2;\n    }\n    return Number(n1) + Number(n2);\n}\n\nconst genericNumber = addGen(5, 2.8);\nconst genericString = addGen(\"5\", \"2.8\");\n\n`genericNumber: ${genericNumber}, genericString: ${genericString} are ${ genericNumber === genericString ? \"equal\" : \"not equal\" }`"
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "text/plain",
+                            "value": [
+                                "\u001b[32m'genericNumber: 7.8, genericString: 7.8 are equal'\u001b[39m"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "language": "typescript",
+            "source": [
+                "interface StateCivil {\n  name: string;\n  age: Age;\n}\n\ntype IdentifiableStateCivil = {\n  id: string;\n  merry?: string;\n  children?: string[];\n};\n\nfunction state<CivilType extends StateCivil>(name: string) {\n  type StateCivilIdentifiable = CivilType & IdentifiableStateCivil;\n  console.log(`We declare ${name} an independent state`);\n  const passports = new Map<string, StateCivilIdentifiable>();\n  function register(civil: CivilType): StateCivilIdentifiable {\n    const id = uuid();\n    const identifiableCivil = { ...civil, id };\n    passports.set(id, identifiableCivil);\n    console.log(`${civil.name} is now a citizen of ${name} now`);\n    return identifiableCivil;\n  }\n  function merry(\n    human1: StateCivilIdentifiable,\n    human2: StateCivilIdentifiable\n  ) {\n    if (human1.merry || human2.merry) {\n      throw new Error(\"One of the humans is already married\");\n    }\n    human1.merry = human2.id;\n    human2.merry = human1.id;\n    return {\n      bread: (child: Omit<CivilType, \"age\">) => {\n        const registerd = register({ ...child, age: 0 } as CivilType);\n        human1.children = human1.children ?? [];\n        human2.children = human2.children ?? [];\n        human1.children.push(registerd.id);\n        human2.children.push(registerd.id);\n      },\n    };\n  }\n  return {\n    register,\n    merry,\n  };\n}\n\ntry {\n    const animalState = state(\"kingdom of animals\");\n    \n    const dogCivil = animalState.register(dog);\n    const catCivil = animalState.register(cat);\n    \n    const marriage = animalState.merry(dogCivil, catCivil);\n    \n    marriage.bread('catDog');\n} catch (e) {\n    console.log(e)\n}"
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "application/vnd.code.notebook.stdout",
+                            "value": [
+                                "We declare kingdom of animals an independent state",
+                                "Dog is now a citizen of kingdom of animals now",
+                                "undefined is now a citizen of kingdom of animals now",
+                                ""
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "language": "typescript",
+            "source": [
+                "const hello = 'hello "
+            ],
+            "outputs": []
         }
     ]
 }
