@@ -1,1 +1,90 @@
-
+{
+    "cells": [
+        {
+            "language": "markdown",
+            "source": [
+                "# TypeScript Hacking 101"
+            ],
+            "outputs": []
+        },
+        {
+            "language": "markdown",
+            "source": [
+                "<a href=\"https://www.youtube.com/watch?v=zQnBQ4tB3ZA\">\n    <img src=\"https://i.ytimg.com/vi/zQnBQ4tB3ZA/maxresdefault.jpg\" width=\"400px\" />\n</a>"
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "text/html",
+                            "value": [
+                                "<a href=\"https://www.youtube.com/watch?v=zQnBQ4tB3ZA\">",
+                                "    <img src=\"https://i.ytimg.com/vi/zQnBQ4tB3ZA/maxresdefault.jpg\" />",
+                                "</a>"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "language": "markdown",
+            "source": [
+                "## Chapter 1 - The TypeScript Basics\n"
+            ],
+            "outputs": []
+        },
+        {
+            "language": "markdown",
+            "source": [
+                "### Basic Types"
+            ],
+            "outputs": []
+        },
+        {
+            "language": "typescript",
+            "source": [
+                "function add(n1: number, n2: number, showResult: boolean, phrase: string) {\n    const result = n1 + n2;\n    if (showResult) {\n      console.log(phrase + result);\n    }\n    return result;\n  }\n  \n  const number1 = 5;\n  const number2 = 2.8;\n  const printResult = true;\n  const resultPhrase = \"Result is: \";\n  const result = add(number1, number2, printResult, resultPhrase);\n  \n  const valid = add(5, 2, true, \"Result is: \");\n\n  // ! this code is invalid, since adding a string to a number will return a concatenated string and not a number\n  // ? this is an example of how typescript can help us catch errors before they happen\n\n  const invalid = add(\"5\", 2, true, \"Result is: \");\n\n  `valid: ${valid}, invalid: ${invalid}`"
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "application/vnd.code.notebook.stdout",
+                            "value": [
+                                "Result is: 7.8",
+                                "Result is: 7",
+                                "Result is: 52",
+                                ""
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "items": [
+                        {
+                            "mime": "text/plain",
+                            "value": [
+                                "\u001b[32m'valid: 7, invalid: 52'\u001b[39m"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "language": "markdown",
+            "source": [
+                "### Object Types"
+            ],
+            "outputs": []
+        },
+        {
+            "language": "typescript",
+            "source": [
+                "interface Person {\n  name: string;\n  age: number;\n  hobbies: string[];\n  role: [number, string];\n}\n\nconst person: Person = {\n  name: \"Maximilian\",\n  age: 30,\n  hobbies: [\"Sports\", \"Cooking\"],\n  role: [2, \"author\"],\n};\n\nconst invalidPerson: Person = {\n  name: \"Maximilian\",\n  age: 30,\n  hobbies: [\"Sports\", \"Cooking\"],\n  role: [2, \"author\", \"admin\"],\n};\n\n// ! this code is invalid, since the role tuple has a length of 2, but we are trying to add a third element\n// ? without typescript, this error would not be caught until the server would return an error\n\n\nasync function registerUser(person: Person, password: string) {\n  const response = await fetch(\"https://example.com/register\", {\n    method: \"POST\",\n    headers: {\n      \"Content-Type\": \"application/json\",\n    },\n    body: JSON.stringify({ person, password }),\n  });\n  return response.json();\n}\n\n\nasync function main() {\n  const valid = await registerUser(person, \"password\").catch((err) => {\n    console.log(err);\n    // should not be called\n    return null;\n  });\n\n  const invalid = await registerUser(invalidPerson, \"password\").catch((err) => {\n    console.log(err);\n    // should be called\n    return null;\n  });\n\n  // will throw an error at compile time\n  const invalid2 = await registerUser(\"Maximilian\", \"password\").catch((err) => {\n    console.log(err);\n    return null;\n  });\n\n}"
+            ],
+            "outputs": []
+        }
+    ]
+}
